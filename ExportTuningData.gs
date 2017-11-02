@@ -1,0 +1,102 @@
+var DEBUG = true;
+
+// For POST requests, just call same endpoint for GET
+function doPost(e) {
+  return doGet(e);  
+}
+
+// The core function called by GET requests
+function doGet(e) {
+  try {
+    return ContentService.createTextOutput(GetTuningData(e)).setMimeType(ContentService.MimeType.JSON);    
+  }
+  catch(errorData) {    
+    var error = {status: 'error',error:errorData}    
+    return ContentService.createTextOutput(JSON.stringify(error)).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+
+// Allow testing in Google Script editor editor
+function testGetTuningData()
+{
+  var e={};
+  e.parameters={};
+  e.parameters.key="YOUR_SPREADSHEET_KEY_HERE";
+  var res = GetTuningData(e)
+  Logger.log(res);  
+}
+
+function GetTuningData(e)
+{
+  var key;
+  var version;
+  
+  if (e===undefined || e.parameters===undefined || e.parameters.key===undefined) 
+    throw("No spreadsheet key passed")
+  else 
+    id = e.parameters.key;
+  
+  var spreadsheet;
+  try {
+    spreadsheet = SpreadsheetApp.openById(id);
+  }
+  catch (errorData) {
+    throw("Can't find Spreadsheet '"+e.parameters.key+"'");
+  }
+  if (spreadsheet===null) throw("Can't find Spreadsheet '"+e.parameters.key+"'");
+  
+  var sheetObjects = {};
+  
+  var sheets = spreadsheet.getSheets();
+  for (var i=0; i<sheets.length; ++i)
+  {
+    var sheetName=sheets[i].getName();
+    var sheetExportIndex=sheetName.indexOf("_export");
+    if (sheetExportIndex>-1) { // Only process sheets containing "_export"
+      var clippedSheetName=sheetName.substring(0,sheetExportIndex); // Strip "export" portion of title
+      sheetObjects[clippedSheetName]=SheetToObjects(sheets[i]); 
+    }
+  }
+  
+  var JsonValue = JSON.stringify(sheetObjects);
+  return JsonValue;
+}
+
+function SheetToObjects(sheet) 
+{
+  // Get spreadsheet data
+  var range = sheet.getDataRange();
+  var values = range.getValues();
+  
+  // Define objects for storing processed data
+  var sheetItems=[];
+  var columnsValid=[];
+  var columnTitles=[];
+  
+  // Define columns and test validity
+  for (var i=0; i<values[0].length; ++i) { 
+    var columnTitle=values[0][i];
+    columnTitles[i]=values[0][i];    
+    columnsValid[i]=columnTitle.indexOf(" ")==-1; // Ignore any column with spaces    
+  }
+  
+  // For every row other than zero (column headers), try to find valid object
+  for (var i=1; i<values.length; ++i) {
+   
+    var isValidObject=false;
+    var newRowObject = {};
+    for (var column=0; column<values[i].length; ++column) {
+       if (columnsValid[column]) {
+          var columnName=columnTitles[column];
+          var columnValue=values[i][column];
+          if ((""+columnValue).length>0) { // Nonempty
+            newRowObject[columnName]=values[i][column];
+            isValidObject=true;
+          }
+       }
+    }      
+    if (isValidObject) sheetItems.push(newRowObject);        
+  }
+  return sheetItems;
+}
