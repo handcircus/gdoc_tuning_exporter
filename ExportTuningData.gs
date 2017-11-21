@@ -52,18 +52,23 @@ function GetTuningData(e)
   for (var i=0; i<sheets.length; ++i)
   {
     var sheetName=sheets[i].getName();
-    var sheetExportIndex=sheetName.indexOf("_export");
-    if (sheetExportIndex>-1) { // Only process sheets containing "_export"
-      var clippedSheetName=sheetName.substring(0,sheetExportIndex); // Strip "export" portion of title
-      sheetObjects[clippedSheetName]=SheetToObjects(sheets[i]); 
+    var sheetExportIndex=sheetName.indexOf("_export_table");
+    if (sheetExportIndex>-1) { // Process sheets containing "_export_table"
+      var clippedSheetName=sheetName.substring(0,sheetExportIndex); // Strip "_export_table" portion of title
+      sheetObjects[clippedSheetName]=SheetToTable(sheets[i]); 
+    }
+    sheetExportIndex=sheetName.indexOf("_export_column");
+    if (sheetExportIndex>-1) { // Process sheets containing "_export_column"
+      var clippedSheetName=sheetName.substring(0,sheetExportIndex); // Strip "_export_column" portion of title
+      sheetObjects[clippedSheetName]=SheetToColumns(sheets[i]); 
     }
   }
   
-  var JsonValue = JSON.stringify(sheetObjects);
+  var JsonValue = JSON.stringify(sheetObjects, null, 2);
   return JsonValue;
 }
 
-function SheetToObjects(sheet) 
+function SheetToTable(sheet) 
 {
   // Get spreadsheet data
   var range = sheet.getDataRange();
@@ -100,3 +105,32 @@ function SheetToObjects(sheet)
   }
   return sheetItems;
 }
+
+function SheetToColumns(sheet) 
+{
+  // Get spreadsheet data
+  var range = sheet.getDataRange();
+  var values = range.getValues();
+  
+  // Define objects for storing processed data
+  var sheetItems={}; 
+  // Cycle through columns
+  for (var columnIndex=0; columnIndex<values[0].length; ++columnIndex) { 
+    var columnTitle=values[0][columnIndex];
+          
+    if (columnTitle.indexOf(" ")==-1) { // Ignore any column with spaces 
+       var newColumnObject = [];
+       var isValidObject=false;
+       for (var rowIndex=1; rowIndex<values.length; ++rowIndex) {
+         var cellValue=values[rowIndex][columnIndex];
+          if ((""+cellValue).length>0) { // Nonempty
+            newColumnObject.push(values[rowIndex][columnIndex]);  
+            isValidObject=true;
+          }
+       }
+       if (isValidObject) sheetItems[columnTitle]=newColumnObject;  
+    }          
+  }    
+  return sheetItems;
+}
+

@@ -12,21 +12,42 @@ This is useful for anyone that wants to have data driven by a spreadsheet model,
 # Setting up the spreadsheet
 
 * Create a new Spreadsheet in Google Spreadsheets
-* Make sure that any worksheets you want to export have "_export" at the end, eg. "config_export". The "_export" part will be stripped before export, and this will be used for the attribute name in JSON.
 * The top row should contain the titles of the attributes you want to export e.g "id", "speed"
 * Any column with spaces in will be ignored e.g "My Notes"
 
+
+# Exporting structured data
+
+Use this if you want to export structured data (for example a list of items for sale, or enemy unit properties)
+
+* Make sure that any worksheets you want to export have "_export_table" at the end, eg. "config_export_table". The "_export_table" part will be stripped before export, and this will be used for the attribute name in JSON.
+
 For example, this Spreadsheet:
 
-![Image of Example Spreadsheet](example_sheet.png)
+![Image of Example Table Spreadsheet](example_sheet.png)
 
 Will export:
 
 `{characters:[
-    {"id":101,"name":"Gary","speed":300:"face_size":102},
-    {"id":102,"name":"Barry","speed":10:"face_size":2}
+    {"id":101,"name":"Roadster","speed":300:"cost":102},
+    {"id":102,"name":"Truck","speed":10:"cost":2}
 ]}`
 
+# Exporting sequence (array) data
+
+Use this if you want to export a sequence of numbers or strings (for example a chest drop-cycle)
+
+* Make sure that any worksheets you want to export have "_export_column" at the end, eg. "drop_cycle_export_column". The "_export_column" part will be stripped before export, and this will be used for the attribute name in JSON.
+
+For example, this Spreadsheet:
+
+![Image of Example Column Spreadsheet](example_column.png)
+
+Will export:
+
+`{drop_cycle:{
+    chest_type:[0,1,0,0,1,2]    
+}`
 
 # Setting up the Script
 
